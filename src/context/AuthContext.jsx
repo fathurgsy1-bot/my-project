@@ -1,26 +1,43 @@
 import { createContext, useContext, useState } from 'react';
 
 const AuthContext = createContext(null);
-export const useAuth = () => useContext(AuthContext);
+
+function loadSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem('session'));
+    return s?.token ? s : null;
+  } catch {
+    return null;
+  }
+}
 
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(() => JSON.parse(localStorage.getItem('rtrw_session') || 'null'));
+  const [session, setSession] = useState(loadSession);
 
-  const signIn = ({ token, username, role }) => {
-    const s = { username, role: role.toLowerCase() };
-    localStorage.setItem('rtrw_token', token);
-    localStorage.setItem('rtrw_session', JSON.stringify(s));
-    setSession(s);
-  };
-  const signOut = () => { localStorage.removeItem('rtrw_token'); localStorage.removeItem('rtrw_session'); setSession(null); };
-
-  const canCrud = (sheet = '') => {
-    const s = sheet.toUpperCase();
-    if (session?.role === 'admin') return true;
-    if (session?.role === 'bendahara') return ['KAS', 'TUNGGAKAN'].includes(s);
-    if (session?.role === 'sekretaris') return s === 'INVENTARIS';
-    return false;
+  const login = (data) => {
+    localStorage.setItem('session', JSON.stringify(data));
+    localStorage.setItem('token', data.token);
+    setSession(data);
   };
 
-  return <AuthContext.Provider value={{ session, signIn, signOut, canCrud }}>{children}</AuthContext.Provider>;
+  const logout = () => {
+    localStorage.removeItem('session');
+    localStorage.removeItem('token');
+    setSession(null);
+  };
+
+  const role = session?.role ?? 'guest';
+  const value = {
+    session,
+    username: session?.username ?? null,
+    role,
+    isLoggedIn: !!session,
+    canCrud: !!session && role !== 'guest',
+    login,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+export const useAuth = () => useContext(AuthContext);
