@@ -1,23 +1,26 @@
-import { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import LoginPage from './pages/LoginPage';
 import Layout from './components/Layout';
-import DashboardPage from './pages/DashboardPage';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 import SheetPage from './pages/SheetPage';
-import TunggakanPage from './pages/TunggakanPage';
+import Tunggakan from './pages/Tunggakan';
+
+function Protected({ children }) {
+  const { isLoggedIn } = useAuth();
+  return isLoggedIn ? children : <Navigate to="/login" replace />;
+}
 
 export default function App() {
-  const { session } = useAuth();
-  const [page, setPage] = useState({ type: 'dashboard' }); // {type:'dashboard'} | {type:'sheet', name}
-  if (!session) return <LoginPage />;
-
-  let view;
-  if (page.type === 'dashboard') view = <DashboardPage onOpen={(name) => setPage({ type: 'sheet', name })} />;
-  else if (page.name.toUpperCase() === 'TUNGGAKAN') view = <TunggakanPage />;
-  else view = <SheetPage key={page.name} name={page.name} />;
-  // TODO: halaman QR Warga, Kartu Warga, Generator Undangan, Scan KK (lihat README)
-
   return (
-    <Layout page={page} onNavigate={setPage}>{view}</Layout>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route element={<Layout />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/sheet/:name" element={<Protected><SheetPage /></Protected>} />
+        <Route path="/tunggakan" element={<Protected><Tunggakan /></Protected>} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
