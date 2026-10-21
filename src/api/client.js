@@ -1,5 +1,6 @@
 const BASE = import.meta.env.VITE_API_URL || '';
 
+
 export async function request(path, { method = 'GET', body } = {}) {
   const token = localStorage.getItem('rtrw_token');
   const res = await fetch(`${BASE}/api${path}`, {
